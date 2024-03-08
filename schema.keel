@@ -1,0 +1,120 @@
+model Author {
+    fields {
+        name Text
+        biography Text?
+        books Book[]
+    }
+
+    actions {
+        create createAuthor() with (name, biography)
+        update updateAuthor(id) with (name?, biography?)
+        get getAuthor(id)
+        list listAuthors()
+        delete deleteAuthor(id)
+    }
+
+    @permission(
+        actions: [create, update, get, list, delete],
+        expression: true
+    )
+}
+
+model Book {
+    fields {
+        title Text
+        description Text?
+        price Number
+        stockNumber Number
+        author Author
+    }
+
+    actions {
+        create createBook() with (title, description, price, stockNumber, author.id)
+        update updateBook(id) with (title?, description?, price?, stockNumber?)
+        get getBook(id)
+        list listBooks(author.id?)
+        delete deleteBook(id)
+    }
+
+    @permission(
+        actions: [create, update, get, list, delete],
+        expression: true
+    )
+}
+
+model Customer {
+    fields {
+        identity Identity @unique
+        name Text
+        email Text @unique
+        orders Order[]
+    }
+
+    actions {
+        create createCustomer() with (name, email) {
+            @set(customer.identity = ctx.identity)
+        }
+        update updateCustomer(id) with (name?, email?)
+        get getCustomer(id) {
+            @where(customer.identity == ctx.identity)
+        }
+        list listCustomers()
+        delete deleteCustomer(id)
+    }
+
+    @permission(
+        actions: [create, update, get, list, delete],
+        expression: true
+    )
+}
+
+model Order {
+    fields {
+        customer Customer
+        total Number
+        date Timestamp
+    }
+
+    actions {
+        create createOrder() with (total, date, customer.id) {
+            @permission(expression: order.customer.identity == ctx.identity)
+        }
+        get getOrder(id) {
+            @where(order.customer.identity == ctx.identity)
+        }
+        list listOrders(customer.id) {
+            @where(order.customer.identity == ctx.identity)
+        }
+        delete deleteOrder(id) {
+            @permission(expression: order.customer.identity == ctx.identity)
+        }
+    }
+
+    @permission(
+        actions: [create, update, get, list, delete],
+        expression: true
+    )
+}
+
+model OrderBooks {
+    fields {
+        order Order
+        book Book
+        quantity Number
+    }
+
+    actions {
+        create createOrderBook() with (order.id, book.id, quantity)
+        update updateOrderBook(order.id, book.id, quantity)
+        get getOrderBook(order.id, book.id)
+        list listOrderBooks(order.id)
+        delete deleteOrderBook(order.id, book.id)
+    }
+
+    @unique([order, book])
+
+    @permission(
+        actions: [create, update, get, list, delete],
+        expression: true
+    )
+}
