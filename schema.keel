@@ -1,6 +1,7 @@
 model Author {
     fields {
         name Text
+        email Text?
         biography Text?
         books Book[]
     }
